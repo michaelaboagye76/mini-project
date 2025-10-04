@@ -1,51 +1,58 @@
-name: Deploy to AWS ECS
+ame: Deploy to AWS ECS
+
 on:
   push:
-    branches: [main]
+    branches:
+      - main
 
 env:
-  ECR_REPO: 957839002008.dkr.ecr.us-east-1.amazonaws.com/flask-ecs-cicd  # your ECR repo
-  AWS_REGION: us-east-1  # hardcoded region
+  AWS_REGION: us-east-1
+  ECR_REPO: 957839002008.dkr.ecr.us-east-1.amazonaws.com/flask-ecs-cicd  # Your ECR repo URI
+  CONTAINER_NAME: flask-container-1                                        # Must match ECS task definition
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      # Step 1: Checkout the code
+      # Step 1: Checkout the repository
       - name: Checkout repository
         uses: actions/checkout@v3
 
       # Step 2: Configure AWS credentials
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v2
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region:            ${{ env.AWS_REGION }}
+          aws-region: ${{ env.AWS_REGION }}
 
-      # Step 3: Set up Docker Buildx
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      # Step 4: Login to Amazon ECR
+      # Step 3: Login to Amazon ECR
       - name: Login to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v2
         with:
           region: ${{ env.AWS_REGION }}
 
-      # Step 5: Build and push Docker image
-      - name: Build and Push Docker image to ECR
+      # Step 4: Build and push Docker image to ECR
+      - name: Build and Push Docker image
         run: |
           docker buildx build \
             --platform linux/amd64 \
-            -t ${{ env.ECR_REPO }}:stable \
+            -t ${{ env.ECR_REPO }}:${{ github.sha }} \
             --push .
 
-      # Step 6: Force ECS service redeploy
-      - name: Force ECS service to redeploy
-        run: |
-          aws ecs update-service \
-            --cluster ${{ secrets.ECS_CLUSTER }} \
-            --service ${{ secrets.ECS_SERVICE }} \
-            --region ${{ env.AWS_REGION }} \
-            --force-new-deployment
+      # Step 5: Render ECS task definition with the new image
+      - name: Render Amazon ECS task definition
+        id: task-def
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: ecs-task-def.json
+          container-name: ${{ env.CONTAINER_NAME }}
+          image: ${{ env.ECR_REPO }}:${{ github.sha }}
+
+      # Step 6: Deploy ECS service with the new task definition
+      - name: Deploy Amazon ECS task definition
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        with:
+          task-definition: ${{ steps.task-def.outputs.task-definition }}
+          service: ${{ secrets.ECS_SERVICE }}
+          cluster: ${{ secrets.ECS_CLUSTER }}
