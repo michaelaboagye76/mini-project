@@ -24,7 +24,7 @@ jobs:
           --platform linux/amd64 \
           -t ${{ env.ECR_REPO }}:stable \
           --push .
-          - name: Force ECS service to redeploy
+      - name: Force ECS service to redeploy itself
         run: |
           aws ecs update-service \
             --cluster ${{ vars.ECS_CLUSTER }} \
