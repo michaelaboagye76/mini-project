@@ -46,7 +46,7 @@ jobs:
       - name: Force ECS service to redeploy
         run: |
           aws ecs update-service \
-            --cluster ${{ secrets.ECS_CLUSTER }} \
-            --service ${{ secrets.ECS_SERVICE }} \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --service ${{ env.ECS_SERVICE }} \
             --region ${{ env.AWS_REGION }} \
             --force-new-deployment
