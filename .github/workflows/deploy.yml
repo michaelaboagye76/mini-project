@@ -18,13 +18,13 @@ jobs:
         uses: docker/setup-buildx-action@v3
       - name: Login to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v2
-      - name: Build and Push Docker image to ECR
+      - name: Build and Push Docker image
         run: |
           docker buildx build \
-            --platform linux/amd64 \
-            -t ${{ vars.ECR_REPO }}:stable \
-            --push .
-      - name: Force ECS service to redeploy
+          --platform linux/amd64 \
+          -t ${{ env.ECR_REPO }}:stable \
+          --push .
+          - name: Force ECS service to redeploy
         run: |
           aws ecs update-service \
             --cluster ${{ vars.ECS_CLUSTER }} \
