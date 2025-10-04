@@ -42,7 +42,7 @@ jobs:
             -t ${{ env.ECR_REPO }}:stable \
             --push .
 
-      # Step 6: Force ECS service redeployment
+      # Step 6: Force ECS service redeployment to use the new image
       - name: Force ECS service to redeploy
         run: |
           aws ecs update-service \
