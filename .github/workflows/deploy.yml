@@ -6,7 +6,9 @@ on:
 
 env:
   AWS_REGION: us-east-1
-  ECR_REPO: 957839002008.dkr.ecr.us-east-1.amazonaws.com/flask-ecs-cicd  # Replace with your ECR repo URI
+  ECR_REPO: 957839002008.dkr.ecr.us-east-1.amazonaws.com/flask-ecs-cicd
+  ECS_CLUSTER: flask-ecs-cluster       # replace with your ECS cluster name
+  ECS_SERVICE: flask-ecs-task-service-jwgxg6kg      # replace with your ECS service name
 
 jobs:
   deploy:
@@ -42,7 +44,7 @@ jobs:
             -t ${{ env.ECR_REPO }}:stable \
             --push .
 
-      # Step 6: Force ECS service redeployment to use the new image
+      # Step 6: Force ECS service redeployment
       - name: Force ECS service to redeploy
         run: |
           aws ecs update-service \
